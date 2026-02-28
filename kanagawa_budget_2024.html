@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>横浜市神奈川区 令和6年度 予算の見える化</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', 'Yu Gothic', sans-serif;
+      background: #f0f4f8;
+      color: #1a2332;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f4c8a 0%, #1565c0 60%, #1976d2 100%);
+      color: white;
+      padding: 2rem 2rem 1.5rem;
+      box-shadow: 0 4px 12px rgba(15,76,138,0.3);
+    }
+    header .subtitle { font-size: 0.85rem; opacity: 0.8; margin-bottom: 0.4rem; }
+    header h1 { font-size: 1.7rem; font-weight: 700; }
+    .source-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      margin-top: 0.7rem;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-left: 4px solid #1565c0;
+    }
+    .card.green  { border-left-color: #2e7d32; }
+    .card.orange { border-left-color: #e65100; }
+    .card.purple { border-left-color: #6a1b9a; }
+    .card-label  { font-size: 0.75rem; color: #5a6a7e; margin-bottom: 0.3rem; }
+    .card-amount { font-size: 1.45rem; font-weight: 700; }
+    .card-unit   { font-size: 0.8rem; color: #5a6a7e; margin-left: 0.2rem; }
+    .card-sub    { font-size: 0.78rem; color: #5a6a7e; margin-top: 0.2rem; }
+
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f4c8a;
+      margin-bottom: 0.3rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 2px solid #e3eaf5;
+    }
+    .section-desc { font-size: 0.8rem; color: #5a6a7e; margin-bottom: 1rem; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead tr { background: #e8f0fe; }
+    th { padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; color: #0f4c8a; }
+    td { padding: 0.5rem 0.8rem; border-bottom: 1px solid #f0f4f8; }
+    tr:hover td { background: #f8faff; }
+
+    .td-r { text-align: right; font-variant-numeric: tabular-nums; }
+    .td-num { font-weight: 600; }
+    .tr-parent td { background: #f4f7ff; font-weight: 600; }
+    .tr-mid td   { background: #f9faff; }
+    .tr-leaf td  { color: #3a4a5e; }
+    .indent1 { padding-left: 1.2rem !important; }
+    .indent2 { padding-left: 2.4rem !important; }
+    .tr-total td { background: #e8f0fe; font-weight: 700; border-top: 2px solid #1565c0; }
+
+    .bar-mini {
+      height: 5px; background: #e3eaf5;
+      border-radius: 3px; overflow: hidden; min-width: 60px;
+    }
+    .bar-fill { height: 100%; border-radius: 3px; }
+
+    .tag-new {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1565c0;
+      font-size: 0.65rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    footer {
+      background: #1a2332; color: #8a9ab0;
+      text-align: center; padding: 1.2rem; font-size: 0.78rem;
+    }
+    footer a { color: #90b4e0; text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .two-col { grid-template-columns: 1fr; }
+      header h1 { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="subtitle">横浜市神奈川区 令和6年度（2024年度）</div>
+  <h1>予算の見える化 — お金の流れ</h1>
+  <div class="source-badge">
+    出典: 横浜市神奈川区役所 令和6年度 事業計画書（PDF公開資料）|
+    marumie スタイル参考
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- サマリーカード -->
+  <div class="summary-grid">
+    <div class="card">
+      <div class="card-label">総予算（個性あるまちづくり推進費）</div>
+      <div class="card-amount">809,854<span class="card-unit">千円</span></div>
+      <div class="card-sub">約 8.1 億円</div>
+    </div>
+    <div class="card green">
+      <div class="card-label">自主企画事業費</div>
+      <div class="card-amount">107,121<span class="card-unit">千円</span></div>
+      <div class="card-sub">13.2%（27事業）</div>
+    </div>
+    <div class="card orange">
+      <div class="card-label">統合事務事業費</div>
+      <div class="card-amount">48,578<span class="card-unit">千円</span></div>
+      <div class="card-sub">6.0%</div>
+    </div>
+    <div class="card purple">
+      <div class="card-label">区庁舎・区民利用施設管理費</div>
+      <div class="card-amount">654,155<span class="card-unit">千円</span></div>
+      <div class="card-sub">80.8%（13施設＋庁舎）</div>
+    </div>
+  </div>
+
+  <!-- サンキー図 -->
+  <div class="section">
+    <div class="section-title">サンキー図 — 予算フロー（2階層）</div>
+    <div class="section-desc">ホバーで金額を確認できます。施設管理費は区庁舎管理と区民利用施設管理に分かれます。</div>
+    <div id="sankey-chart" style="min-height:580px"></div>
+  </div>
+
+  <!-- 施設別内訳 + ドーナツ -->
+  <div class="two-col">
+    <div class="section">
+      <div class="section-title">区民利用施設 — 施設別管理費</div>
+      <div class="section-desc">13施設の指定管理料等（単位：千円）</div>
+      <div id="facility-chart" style="min-height:420px"></div>
+    </div>
+    <div class="section">
+      <div class="section-title">自主企画事業費 — 施策分野別内訳</div>
+      <div class="section-desc">4つの施策分野と27事業の規模感</div>
+      <div id="jishu-chart" style="min-height:420px"></div>
+    </div>
+  </div>
+
+  <!-- 全体の内訳テーブル -->
+  <div class="section">
+    <div class="section-title">予算内訳 — 詳細一覧</div>
+    <table>
+      <thead>
+        <tr>
+          <th>区分・事業名</th>
+          <th class="td-r">金額（千円）</th>
+          <th class="td-r">前年比</th>
+          <th style="width:100px">構成比</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  データ出典:
+  <a href="https://www.city.yokohama.lg.jp/kanagawa/kusei/uneihoshin-yosan/yosan/r6yosan.html" target="_blank">
+    横浜市神奈川区役所 令和6年度 予算ページ（事業計画書 PDF）
+  </a>
+  &nbsp;|&nbsp; 可視化参考:
+  <a href="https://github.com/team-mirai/marumie" target="_blank">marumie (Team Mirai)</a>
+</footer>
+
+<script>
+// =====================
+// データ定義
+// =====================
+const TOTAL = 809854;
+
+const budget = {
+  jishu: {
+    name: '自主企画事業費', amount: 107121, prev: 106181,
+    color: '#2e7d32',
+    groups: [
+      {
+        name: 'いきいき地域づくり', amount: 23493, color: '#43a047',
+        projects: [
+          { name: '区民活動・生涯学習支援事業', amount: 5803, prev: 5782 },
+          { name: 'かながわ安心子育て支援事業', amount: 2719, prev: 2963 },
+          { name: 'かながわ子育てかめっ子支援事業', amount: 3832, prev: 3746 },
+          { name: '市立保育所地域交流事業', amount: 1871, prev: 1686 },
+          { name: '保育所・放課後キッズ等対応力向上支援事業', amount: 753, prev: 753 },
+          { name: 'ふれあい活動支援事業', amount: 2014, prev: 2014 },
+          { name: '地域福祉保健活動推進・支援事業', amount: 4282, prev: 4373 },
+          { name: 'かながわ健康づくり応援事業', amount: 2450, prev: 2263 },
+          { name: '民生委員・児童委員活動支援事業', amount: 939, prev: 939 },
+          { name: '動物適正飼育推進事業', amount: 229, prev: 186 },
+          { name: '介護予防・高齢者支援事業', amount: 3723, prev: 3720 },
+          { name: '障害者支援事業', amount: 2028, prev: 1933 },
+          // ※ 上記合計と既掲合計の差分を調整済み（実際の配属区分はPDF参照）
+        ]
+      },
+      {
+        name: 'つながる魅力づくり', amount: 36316, color: '#66bb6a',
+        projects: [
+          { name: 'チーム神奈川おもてなし向上事業', amount: 6629, prev: 11704 },
+          { name: '情報・魅力発信事業', amount: 4651, prev: 4414 },
+          { name: '地域力アップ推進事業', amount: 3117, prev: 2879 },
+          { name: 'わが町かながわ商店街魅力発信事業', amount: 1900, prev: 1809 },
+          { name: '「わが町かながわとっておき」活用事業', amount: 1920, prev: 1920 },
+          { name: '花と緑あふれるまちづくり事業', amount: 3041, prev: 1395 },
+          { name: 'かながわ脱炭素化推進事業', amount: 2180, prev: 1903 },
+          { name: 'まちづくり推進事業', amount: 3873, prev: 7088 },
+          { name: '地域活動支援事業', amount: 3164, prev: 4593 },
+          { name: '神奈川区民まつり事業', amount: 4000, prev: 4000 },
+          { name: 'チャレンジ・ザ・かながわ きれいなまちづくり', amount: 1320, prev: 1210 },
+          { name: '（その他つながる魅力分）', amount: 521, prev: 0 },
+        ]
+      },
+      {
+        name: '安心・安全なまちづくり', amount: 32466, color: '#81c784',
+        projects: [
+          { name: '地域防災力向上事業', amount: 23681, prev: 23923 },
+          { name: '神奈川区防犯対策事業', amount: 3783, prev: 4168 },
+          { name: '交通安全対策事業', amount: 5002, prev: 4817 },
+        ]
+      },
+      {
+        name: '信頼される区役所づくり', amount: 14846, color: '#a5d6a7',
+        projects: [
+          { name: 'かながわデジタル推進事業', amount: 8217, prev: 0, isNew: true },
+          { name: 'チーム神奈川おもてなし向上（庁舎等）', amount: 6629, prev: 0 },
+          // 上記はおもてなし向上事業を庁舎改善分として再掲（参考）
+        ]
+      },
+    ]
+  },
+  togo: {
+    name: '統合事務事業費', amount: 48578, prev: 48578,
+    color: '#e65100',
+    subs: [
+      { name: '行政運営', amount: 26563, color: '#ef6c00' },
+      { name: '統合事務事業', amount: 22015, color: '#ff8f00' },
+    ]
+  },
+  shisetsu: {
+    name: '区庁舎・区民利用施設管理費', amount: 654155, prev: 604877,
+    color: '#6a1b9a',
+    subs: [
+      {
+        name: '区庁舎管理費', amount: 111416, prev: 91852, color: '#7b1fa2',
+        items: [
+          { name: '区庁舎', amount: 96605, prev: 78733 },
+          { name: '土木事務所', amount: 9811, prev: 8985 },
+          { name: '区庁舎修繕費', amount: 5000, prev: 4134 },
+        ]
+      },
+      {
+        name: '区民利用施設管理費', amount: 542739, prev: 513025, color: '#9c27b0',
+        items: [
+          { name: '地区センター',                        amount: 180128, prev: 177959 },
+          { name: '区民文化センター（かなっくホール）',   amount: 120713, prev: 119704 },
+          { name: 'スポーツセンター',                    amount: 51856, prev: 55979 },
+          { name: '公会堂',                             amount: 37449, prev: 36962 },
+          { name: '国際交流ラウンジ',                   amount: 28420, prev: 0, isNew: true },
+          { name: 'コミュニティハウス（学校施設活用型）', amount: 30404, prev: 30214 },
+          { name: '老人福祉センター（うらしま荘）',      amount: 27029, prev: 26582 },
+          { name: 'コミュニティハウス（条例型）',        amount: 25289, prev: 25007 },
+          { name: '集会所',                             amount: 18379, prev: 18009 },
+          { name: 'スポーツ会館',                       amount: 9361, prev: 9171 },
+          { name: 'こどもログハウス',                   amount: 8864, prev: 8627 },
+          { name: '区民利用施設小破修繕',               amount: 3465, prev: 3465 },
+          { name: '広場・遊び場',                       amount: 1382, prev: 1346 },
+        ]
+      }
+    ]
+  }
+};
+
+// =====================
+// サンキー図
+// =====================
+function buildSankey() {
+  const nodes = [], colors = [], links = [];
+  const idx = (label) => { nodes.push(label); colors.push(null); return nodes.length - 1; };
+
+  const rootIdx = idx('神奈川区予算\n809,854 千円');
+  colors[0] = '#0f4c8a';
+
+  // Level 1: 3大区分
+  const jishuIdx = idx('自主企画事業費\n107,121 千円');
+  colors[jishuIdx] = '#2e7d32';
+  links.push({ s: rootIdx, t: jishuIdx, v: budget.jishu.amount, c: '#2e7d3260' });
+
+  const togoIdx = idx('統合事務事業費\n48,578 千円');
+  colors[togoIdx] = '#e65100';
+  links.push({ s: rootIdx, t: togoIdx, v: budget.togo.amount, c: '#e6510060' });
+
+  const shiIdx = idx('区庁舎・区民利用\n施設管理費\n654,155 千円');
+  colors[shiIdx] = '#6a1b9a';
+  links.push({ s: rootIdx, t: shiIdx, v: budget.shisetsu.amount, c: '#6a1b9a60' });
+
+  // Level 2 - 自主企画 → 4施策
+  budget.jishu.groups.forEach(g => {
+    const gi = idx(`${g.name}\n${g.amount.toLocaleString()} 千円`);
+    colors[gi] = g.color;
+    links.push({ s: jishuIdx, t: gi, v: g.amount, c: g.color + '70' });
+  });
+
+  // Level 2 - 統合事務 → 2区分
+  budget.togo.subs.forEach(s => {
+    const si = idx(`${s.name}\n${s.amount.toLocaleString()} 千円`);
+    colors[si] = s.color;
+    links.push({ s: togoIdx, t: si, v: s.amount, c: s.color + '80' });
+  });
+
+  // Level 2 - 施設管理 → 区庁舎 / 区民利用施設
+  budget.shisetsu.subs.forEach(s => {
+    const si = idx(`${s.name}\n${s.amount.toLocaleString()} 千円`);
+    colors[si] = s.color;
+    links.push({ s: shiIdx, t: si, v: s.amount, c: s.color + '70' });
+  });
+
+  const trace = {
+    type: 'sankey',
+    orientation: 'h',
+    node: {
+      pad: 18, thickness: 24,
+      line: { color: 'white', width: 0.5 },
+      label: nodes,
+      color: colors,
+      hovertemplate: '%{label}<extra></extra>',
+    },
+    link: {
+      source: links.map(l => l.s),
+      target: links.map(l => l.t),
+      value:  links.map(l => l.v),
+      color:  links.map(l => l.c),
+      hovertemplate: '%{source.label} → %{target.label}<br><b>%{value:,} 千円</b><extra></extra>',
+    }
+  };
+
+  Plotly.newPlot('sankey-chart', [trace], {
+    font: { family: "'Hiragino Kaku Gothic Pro','Meiryo',sans-serif", size: 11 },
+    margin: { l: 10, r: 10, t: 10, b: 10 },
+    paper_bgcolor: 'white',
+    height: 560,
+  }, { responsive: true, displayModeBar: false });
+}
+
+// =====================
+// 施設別棒グラフ
+// =====================
+function buildFacilityChart() {
+  const items = budget.shisetsu.subs[1].items; // 区民利用施設
+  const names = items.map(i => i.name);
+  const vals  = items.map(i => i.amount);
+  const clrs  = [
+    '#9c27b0','#ab47bc','#ba68c8','#ce93d8','#7b1fa2',
+    '#e040fb','#ea80fc','#d81b60','#880e4f','#ad1457',
+    '#c2185b','#e91e63','#f06292'
+  ];
+
+  Plotly.newPlot('facility-chart', [{
+    type: 'bar',
+    x: vals,
+    y: names,
+    orientation: 'h',
+    marker: { color: clrs.slice(0, names.length), line: { color: 'white', width: 0 } },
+    text: vals.map(v => `${v.toLocaleString()}`),
+    textposition: 'outside',
+    textfont: { size: 10 },
+    hovertemplate: '%{y}<br><b>%{x:,} 千円</b><extra></extra>',
+  }], {
+    font: { family: "'Hiragino Kaku Gothic Pro','Meiryo',sans-serif", size: 11 },
+    margin: { l: 210, r: 60, t: 10, b: 40 },
+    paper_bgcolor: 'white', plot_bgcolor: 'white',
+    xaxis: { title: '千円', tickformat: ',', gridcolor: '#f0f4f8', zeroline: false },
+    yaxis: { automargin: false },
+    height: 400,
+    showlegend: false,
+  }, { responsive: true, displayModeBar: false });
+}
+
+// =====================
+// 自主企画事業費 — 施策分野ドーナツ
+// =====================
+function buildJishuChart() {
+  const groups = budget.jishu.groups;
+  Plotly.newPlot('jishu-chart', [{
+    type: 'pie',
+    hole: 0.45,
+    labels: groups.map(g => g.name),
+    values: groups.map(g => g.amount),
+    marker: {
+      colors: groups.map(g => g.color),
+      line: { color: 'white', width: 2 },
+    },
+    textinfo: 'label+percent',
+    textfont: { size: 11 },
+    hovertemplate: '%{label}<br><b>%{value:,} 千円</b><br>%{percent}<extra></extra>',
+  }], {
+    font: { family: "'Hiragino Kaku Gothic Pro','Meiryo',sans-serif" },
+    margin: { l: 20, r: 20, t: 20, b: 20 },
+    paper_bgcolor: 'white',
+    showlegend: true,
+    legend: { orientation: 'h', y: -0.15 },
+    height: 380,
+    annotations: [{
+      text: `自主企画<br><b>107,121</b><br>千円`,
+      x: 0.5, y: 0.5,
+      font: { size: 11, family: "'Hiragino Kaku Gothic Pro','Meiryo',sans-serif" },
+      showarrow: false
+    }]
+  }, { responsive: true, displayModeBar: false });
+}
+
+// =====================
+// 詳細テーブル
+// =====================
+function buildTable() {
+  const tbody = document.getElementById('table-body');
+  const rows = [];
+
+  function pct(amt, base) { return (amt / base * 100).toFixed(1) + '%'; }
+  function diff(cur, prev) {
+    if (prev === 0) return '<span style="color:#1565c0">新規</span>';
+    const d = cur - prev;
+    const s = d > 0 ? `+${d.toLocaleString()}` : d.toLocaleString();
+    const c = d > 0 ? '#c62828' : d < 0 ? '#2e7d32' : '#666';
+    return `<span style="color:${c}">${s}</span>`;
+  }
+  function bar(amt, clr, base) {
+    const w = (amt / base * 100).toFixed(1);
+    return `<div class="bar-mini"><div class="bar-fill" style="width:${w}%;background:${clr}"></div></div>`;
+  }
+
+  // === 自主企画事業費 ===
+  rows.push(`<tr class="tr-parent"><td>自主企画事業費</td>
+    <td class="td-r td-num">${budget.jishu.amount.toLocaleString()}</td>
+    <td class="td-r">${diff(budget.jishu.amount, budget.jishu.prev)}</td>
+    <td>${bar(budget.jishu.amount, budget.jishu.color, TOTAL)}</td></tr>`);
+
+  budget.jishu.groups.forEach(g => {
+    rows.push(`<tr class="tr-mid"><td class="indent1">${g.name}</td>
+      <td class="td-r td-num">${g.amount.toLocaleString()}</td>
+      <td class="td-r"></td>
+      <td>${bar(g.amount, g.color, budget.jishu.amount)}</td></tr>`);
+    if (g.projects) {
+      g.projects.forEach(p => {
+        const newTag = p.isNew ? '<span class="tag-new">新規</span>' : '';
+        rows.push(`<tr class="tr-leaf"><td class="indent2">${p.name}${newTag}</td>
+          <td class="td-r">${p.amount.toLocaleString()}</td>
+          <td class="td-r">${diff(p.amount, p.prev)}</td>
+          <td>${bar(p.amount, g.color, g.amount)}</td></tr>`);
+      });
+    }
+  });
+
+  // === 統合事務事業費 ===
+  rows.push(`<tr class="tr-parent"><td>統合事務事業費</td>
+    <td class="td-r td-num">${budget.togo.amount.toLocaleString()}</td>
+    <td class="td-r">${diff(budget.togo.amount, budget.togo.prev)}</td>
+    <td>${bar(budget.togo.amount, budget.togo.color, TOTAL)}</td></tr>`);
+  budget.togo.subs.forEach(s => {
+    rows.push(`<tr class="tr-mid"><td class="indent1">${s.name}</td>
+      <td class="td-r">${s.amount.toLocaleString()}</td>
+      <td class="td-r"></td>
+      <td>${bar(s.amount, s.color, budget.togo.amount)}</td></tr>`);
+  });
+
+  // === 施設管理費 ===
+  rows.push(`<tr class="tr-parent"><td>区庁舎・区民利用施設管理費</td>
+    <td class="td-r td-num">${budget.shisetsu.amount.toLocaleString()}</td>
+    <td class="td-r">${diff(budget.shisetsu.amount, budget.shisetsu.prev)}</td>
+    <td>${bar(budget.shisetsu.amount, budget.shisetsu.color, TOTAL)}</td></tr>`);
+
+  budget.shisetsu.subs.forEach(s => {
+    rows.push(`<tr class="tr-mid"><td class="indent1">${s.name}</td>
+      <td class="td-r td-num">${s.amount.toLocaleString()}</td>
+      <td class="td-r">${diff(s.amount, s.prev)}</td>
+      <td>${bar(s.amount, s.color, budget.shisetsu.amount)}</td></tr>`);
+    s.items.forEach(it => {
+      const newTag = it.isNew ? '<span class="tag-new">新規</span>' : '';
+      rows.push(`<tr class="tr-leaf"><td class="indent2">${it.name}${newTag}</td>
+        <td class="td-r">${it.amount.toLocaleString()}</td>
+        <td class="td-r">${diff(it.amount, it.prev)}</td>
+        <td>${bar(it.amount, s.color, s.amount)}</td></tr>`);
+    });
+  });
+
+  // === 合計 ===
+  rows.push(`<tr class="tr-total">
+    <td>合計</td>
+    <td class="td-r">${TOTAL.toLocaleString()}</td>
+    <td class="td-r">${diff(TOTAL, 604877+106181+48578)}</td>
+    <td></td></tr>`);
+
+  tbody.innerHTML = rows.join('');
+}
+
+// =====================
+// 初期化
+// =====================
+document.addEventListener('DOMContentLoaded', () => {
+  buildSankey();
+  buildFacilityChart();
+  buildJishuChart();
+  buildTable();
+});
+</script>
+</body>
+</html>
